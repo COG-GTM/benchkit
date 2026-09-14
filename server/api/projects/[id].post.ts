@@ -1,3 +1,4 @@
+import { isValidObjectId } from "mongoose";
 import { Project } from "~~/models";
 
 export default defineEventHandler(async (event) => {
@@ -28,11 +29,47 @@ export default defineEventHandler(async (event) => {
     }
 
     if (method === "PATCH") {
-      const { _method, ...updateData } = body;
+      const update: { name?: string; description?: string; members?: string[] } =
+        {};
+
+      if (body.name !== undefined) {
+        if (typeof body.name !== "string" || !body.name.trim()) {
+          throw createError({
+            statusCode: 400,
+            statusMessage: "name must be a non-empty string",
+          });
+        }
+        update.name = body.name;
+      }
+
+      if (body.description !== undefined) {
+        if (typeof body.description !== "string") {
+          throw createError({
+            statusCode: 400,
+            statusMessage: "description must be a string",
+          });
+        }
+        update.description = body.description;
+      }
+
+      if (body.members !== undefined) {
+        if (
+          !Array.isArray(body.members) ||
+          !body.members.every(
+            (m: unknown) => typeof m === "string" && isValidObjectId(m),
+          )
+        ) {
+          throw createError({
+            statusCode: 400,
+            statusMessage: "members must be an array of user IDs",
+          });
+        }
+        update.members = body.members;
+      }
 
       const updatedProject = await Project.findByIdAndUpdate(
         projectId,
-        { ...updateData, updatedAt: new Date() },
+        { $set: update },
         { new: true, runValidators: true },
       )
         .populate("owner", "name email")
