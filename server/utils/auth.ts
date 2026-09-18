@@ -21,13 +21,21 @@ export async function resolveAuthenticatedUser(
   const principalId = getRequestHeader(event, "x-ms-client-principal-id");
 
   if (principalId) {
-    return await User.findOne({ azureId: principalId });
+    const user = await User.findOne({ azureId: principalId });
+    if (user) {
+      return user;
+    }
   }
 
   const principalName = getRequestHeader(event, "x-ms-client-principal-name");
 
   if (principalName) {
-    return await User.findOne({ email: principalName.toLowerCase() });
+    // Accounts already bound to an Azure identity must match on that identity,
+    // so an unmatched principal id can never be resolved by name instead.
+    return await User.findOne({
+      email: principalName.toLowerCase(),
+      azureId: { $exists: false },
+    });
   }
 
   return null;
