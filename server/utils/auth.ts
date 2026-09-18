@@ -1,5 +1,5 @@
 import type { H3Event } from "h3";
-import type { HydratedDocument } from "mongoose";
+import { Types, type HydratedDocument } from "mongoose";
 import { User, type IUser } from "~~/models";
 
 export type AuthenticatedUser = HydratedDocument<IUser>;
@@ -21,10 +21,7 @@ export async function resolveAuthenticatedUser(
   const principalId = getRequestHeader(event, "x-ms-client-principal-id");
 
   if (principalId) {
-    const user = await User.findOne({ azureId: principalId });
-    if (user) {
-      return user;
-    }
+    return await User.findOne({ azureId: principalId });
   }
 
   const principalName = getRequestHeader(event, "x-ms-client-principal-name");
@@ -63,7 +60,18 @@ export function requireSelfOrAdmin(
 ): AuthenticatedUser {
   const user = requireAuth(event);
 
-  if (!isAdmin(user) && String(user._id) !== targetUserId) {
+  if (!Types.ObjectId.isValid(targetUserId)) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Invalid user ID",
+    });
+  }
+
+  const isSelf = new Types.ObjectId(targetUserId).equals(
+    user._id as Types.ObjectId,
+  );
+
+  if (!isAdmin(user) && !isSelf) {
     throw createError({
       statusCode: 403,
       statusMessage: "Forbidden",

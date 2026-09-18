@@ -22,14 +22,27 @@ export default defineEventHandler(async (event) => {
       : SELF_EDITABLE_FIELDS;
 
     const updateData: Record<string, unknown> = {};
+    const unsetData: Record<string, 1> = {};
 
     for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field];
+      if (body[field] === undefined) {
+        continue;
       }
+
+      // An emptied azureId must be removed, not stored as "", so the sparse
+      // unique index keeps ignoring users without an Azure identity.
+      if (field === "azureId" && !String(body[field]).trim()) {
+        unsetData.azureId = 1;
+        continue;
+      }
+
+      updateData[field] = body[field];
     }
 
-    if (Object.keys(updateData).length === 0) {
+    if (
+      Object.keys(updateData).length === 0 &&
+      Object.keys(unsetData).length === 0
+    ) {
       throw createError({
         statusCode: 400,
         statusMessage: "No updatable fields provided",
@@ -38,7 +51,10 @@ export default defineEventHandler(async (event) => {
 
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { ...updateData, updatedAt: new Date() },
+      {
+        $set: { ...updateData, updatedAt: new Date() },
+        ...(Object.keys(unsetData).length ? { $unset: unsetData } : {}),
+      },
       { new: true, runValidators: true },
     );
 

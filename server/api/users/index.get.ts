@@ -2,9 +2,13 @@ import { User } from "~~/models";
 
 export default defineEventHandler(async (event) => {
   try {
-    requireAuth(event);
+    const caller = requireAuth(event);
 
-    const users = await User.find();
+    // Non-admins only get the directory fields needed to render assignments.
+    const users = isAdmin(caller)
+      ? await User.find()
+      : await User.find().select("name role");
+
     return users;
   } catch (error: any) {
     throw createError({
