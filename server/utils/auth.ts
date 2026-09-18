@@ -34,7 +34,7 @@ export async function resolveAuthenticatedUser(
     // so an unmatched principal id can never be resolved by name instead.
     return await User.findOne({
       email: principalName.toLowerCase(),
-      azureId: { $exists: false },
+      azureId: null,
     });
   }
 

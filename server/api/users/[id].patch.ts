@@ -31,7 +31,7 @@ export default defineEventHandler(async (event) => {
 
       // An emptied azureId must be removed, not stored as "", so the sparse
       // unique index keeps ignoring users without an Azure identity.
-      if (field === "azureId" && !String(body[field]).trim()) {
+      if (field === "azureId" && !String(body[field] ?? "").trim()) {
         unsetData.azureId = 1;
         continue;
       }
