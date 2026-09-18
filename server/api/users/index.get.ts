@@ -2,13 +2,14 @@ import { User } from "~~/models";
 
 export default defineEventHandler(async (event) => {
   try {
+    requireAuth(event);
+
     const users = await User.find();
     return users;
-  } catch (error) {
+  } catch (error: any) {
     throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to fetch users",
-      data: error,
+      statusCode: error.statusCode || 500,
+      statusMessage: error.statusMessage || "Failed to fetch users",
     });
   }
 });

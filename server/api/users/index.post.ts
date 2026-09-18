@@ -2,6 +2,15 @@ import { User } from "~~/models";
 
 export default defineEventHandler(async (event) => {
   try {
+    const caller = requireAuth(event);
+
+    if (!isAdmin(caller)) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Forbidden",
+      });
+    }
+
     const body = await readBody(event);
 
     const userData: any = {
@@ -30,9 +39,8 @@ export default defineEventHandler(async (event) => {
       });
     }
     throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to create user",
-      data: error,
+      statusCode: error.statusCode || 500,
+      statusMessage: error.statusMessage || "Failed to create user",
     });
   }
 });
