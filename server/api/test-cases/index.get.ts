@@ -80,8 +80,25 @@ export default defineEventHandler(async (event) => {
         .populate("validated.user", "name")
         .sort({ createdAt: -1, _id: -1 })
         .skip((page - 1) * limit)
-        .limit(limit),
+        .limit(limit)
+        .lean(),
     ]);
+
+    // A case can be assigned to several projects; only show the caller
+    // the assignments for projects they can access.
+    if (accessibleProjectIds) {
+      for (const testCase of testCases) {
+        testCase.assigned = testCase.assigned.filter((assignment) => {
+          const project = assignment.project as unknown as {
+            _id: Types.ObjectId;
+          } | null;
+          return (
+            project != null &&
+            accessibleProjectIds.some((id) => id.equals(project._id))
+          );
+        });
+      }
+    }
 
     setResponseHeaders(event, {
       "X-Total-Count": String(total),
