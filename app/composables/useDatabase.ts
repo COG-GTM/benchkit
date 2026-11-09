@@ -81,9 +81,21 @@ export const useTestCases = () => {
     project?: string;
     user?: string;
   }): Promise<ITestCase[]> => {
-    return await $fetch("/api/test-cases", {
-      query,
-    });
+    const limit = 500;
+    const testCases: ITestCase[] = [];
+
+    for (let page = 1; ; page++) {
+      const response = await $fetch.raw<ITestCase[]>("/api/test-cases", {
+        query: { ...query, page, limit },
+      });
+      const batch = response._data ?? [];
+      testCases.push(...batch);
+
+      const total = Number(response.headers.get("x-total-count"));
+      if (batch.length < limit || testCases.length >= total) {
+        return testCases;
+      }
+    }
   };
 
   const createTestCase = async (
