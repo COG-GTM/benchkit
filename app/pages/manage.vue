@@ -869,13 +869,15 @@ const handleInputFilesChange = async (event: Event) => {
       color: "success",
     });
   } catch (error) {
+    const { data } = error as { data?: { message?: string } };
     toast.add({
       title: "Upload Failed",
-      description: "Failed to upload input files",
+      description: data?.message || "Failed to upload input files",
       color: "error",
     });
   } finally {
     isUploadingInputFiles.value = false;
+    target.value = "";
   }
 };
 
