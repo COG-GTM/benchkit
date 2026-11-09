@@ -115,7 +115,6 @@ export const useTestCases = () => {
   const validateTestCase = async (
     id: string,
     validationData: {
-      user: string;
       comment?: string;
       data: Record<string, any>;
     },
