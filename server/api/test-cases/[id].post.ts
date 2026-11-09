@@ -28,11 +28,18 @@ export default defineEventHandler(async (event) => {
     }
 
     if (method === "PATCH") {
-      const { _method, ...updateData } = body;
+      // Only editable fields; `validated` is written exclusively by the
+      // authenticated validate endpoint.
+      const updateData: Record<string, unknown> = {};
+      for (const field of ["inputs", "original", "assigned"]) {
+        if (body[field] !== undefined) {
+          updateData[field] = body[field];
+        }
+      }
 
       const updatedTestCase = await TestCase.findByIdAndUpdate(
         testCaseId,
-        { ...updateData, updatedAt: new Date() },
+        { $set: { ...updateData, updatedAt: new Date() } },
         { new: true, runValidators: true },
       )
         .populate("assigned.project", "name")
