@@ -9,7 +9,8 @@
     "db:start": "mkdir -p ./data/db && mongod --dbpath ./data/db --port 27017 --quiet --logpath /dev/null",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@nuxt/eslint": "^1.5.2",

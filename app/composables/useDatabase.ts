@@ -100,15 +100,14 @@ export const useTestCases = () => {
     testCaseData: Partial<ITestCase>,
   ): Promise<ITestCase> => {
     return await $fetch(`/api/test-cases/${id}`, {
-      method: "POST",
-      body: { ...testCaseData, _method: "PATCH" },
+      method: "PATCH",
+      body: testCaseData,
     });
   };
 
   const deleteTestCase = async (id: string): Promise<void> => {
     return await $fetch(`/api/test-cases/${id}`, {
-      method: "POST",
-      body: { _method: "DELETE" },
+      method: "DELETE",
     });
   };
 
