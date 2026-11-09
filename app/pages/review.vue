@@ -282,6 +282,13 @@ const originalData = computed(() => {
 
 const validatedData = ref({});
 
+// Validated data must keep the original output's fields only (no display-only
+// keys such as filename/_id), since the server rejects any other shape.
+const cloneCurrentOriginal = () =>
+  JSON.parse(
+    JSON.stringify(allSamples.value[currentIndex.value]?.original ?? {}),
+  );
+
 // Progress calculation
 const progress = computed(
   () => ((currentIndex.value + 1) / totalSamples.value) * 100,
@@ -325,14 +332,14 @@ const loadTestCases = async () => {
 const previousSample = () => {
   if (currentIndex.value > 0) {
     currentIndex.value--;
-    validatedData.value = JSON.parse(JSON.stringify(originalData.value));
+    validatedData.value = cloneCurrentOriginal();
   }
 };
 
 const nextSample = () => {
   if (currentIndex.value < totalSamples.value - 1) {
     currentIndex.value++;
-    validatedData.value = JSON.parse(JSON.stringify(originalData.value));
+    validatedData.value = cloneCurrentOriginal();
   }
 };
 
@@ -343,7 +350,7 @@ const onDataChange = (newData: any) => {
 
 // Reset to original data
 const resetData = () => {
-  validatedData.value = JSON.parse(JSON.stringify(originalData.value));
+  validatedData.value = cloneCurrentOriginal();
   toast.add({
     title: "Reset",
     description: "Data reset to original",
@@ -386,11 +393,7 @@ const submitValidation = async () => {
   isSubmitting.value = true;
 
   try {
-    // TODO: Get current user ID (for now using a placeholder)
-    const currentUserId = "60f7b3b3b3b3b3b3b3b3b3b3"; // This should come from auth
-
     await validateTestCase(originalData.value._id, {
-      user: currentUserId,
       comment: "Validation completed via review interface",
       data: validatedData.value,
     });
@@ -415,7 +418,7 @@ const submitValidation = async () => {
 
     // Load next sample if available
     if (allSamples.value.length > 0) {
-      validatedData.value = JSON.parse(JSON.stringify(originalData.value));
+      validatedData.value = cloneCurrentOriginal();
     } else {
       toast.add({
         title: "All done!",
@@ -424,9 +427,15 @@ const submitValidation = async () => {
       });
     }
   } catch (error: any) {
+    const status = error?.statusCode ?? error?.response?.status;
     toast.add({
       title: "Error",
-      description: "Failed to submit validation",
+      description:
+        status === 401
+          ? "You must be signed in to submit a validation"
+          : status === 403
+            ? "You are not allowed to validate this test case"
+            : error?.data?.statusMessage || "Failed to submit validation",
       color: "error",
     });
   } finally {
@@ -507,7 +516,7 @@ onMounted(() => {
 // Watch for index changes to update validated data
 watch(currentIndex, () => {
   if (allSamples.value.length > 0) {
-    validatedData.value = JSON.parse(JSON.stringify(originalData.value));
+    validatedData.value = cloneCurrentOriginal();
     currentInputFileIndex.value = 0; // Reset input file index when changing samples
   }
 });
