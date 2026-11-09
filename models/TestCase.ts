@@ -1,4 +1,5 @@
 import { model, Schema, Types } from "mongoose";
+import { isSafeInputFilePath } from "../shared/utils/inputFile";
 
 export interface ITestCaseInput {
   type: "pdf" | "img" | "txt" | "json";
@@ -38,6 +39,10 @@ const testCaseInputSchema = new Schema<ITestCaseInput>(
     file: {
       type: String,
       required: true,
+      validate: {
+        validator: (value: string) => isSafeInputFilePath(value),
+        message: "file must be an uploaded file path",
+      },
     },
     filename: {
       type: String,

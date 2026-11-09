@@ -148,6 +148,21 @@
               />
               <p class="mt-2">No input file available</p>
             </div>
+            <!-- Unsafe file location -->
+            <div
+              v-else-if="!isCurrentInputFileSafe"
+              class="text-center text-gray-500"
+            >
+              <UIcon
+                name="i-heroicons-shield-exclamation"
+                class="h-12 w-12 text-gray-300"
+              />
+              <p class="mt-2">Preview unavailable</p>
+              <p class="text-xs">
+                {{ getCurrentInputFile?.filename }} does not point to an
+                uploaded file.
+              </p>
+            </div>
             <!-- Image preview -->
             <NuxtImg
               v-else-if="getCurrentInputFile?.type === 'img'"
@@ -446,6 +461,11 @@ const getCurrentInputFile = computed(() => {
   return files[currentInputFileIndex.value] || null;
 });
 
+const isCurrentInputFileSafe = computed(() => {
+  const file = getCurrentInputFile.value;
+  return !!file && isSafeInputFilePath(file.file, file.type);
+});
+
 // Input file navigation functions
 const previousInputFile = () => {
   if (currentInputFileIndex.value > 0) {
@@ -465,7 +485,12 @@ const jsonFileContent = ref({});
 
 const loadFileContent = async () => {
   const currentFile = getCurrentInputFile.value;
-  if (!currentFile) return;
+  if (
+    !currentFile ||
+    !isSafeInputFilePath(currentFile.file, currentFile.type)
+  ) {
+    return;
+  }
 
   try {
     if (currentFile.type === "txt") {

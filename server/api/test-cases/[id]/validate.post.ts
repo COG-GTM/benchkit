@@ -22,7 +22,8 @@ export default defineEventHandler(async (event) => {
       data: body.data,
     });
 
-    await testCase.save();
+    // Legacy inputs that predate file path validation must not block reviews.
+    await testCase.save({ validateModifiedOnly: true });
 
     // Populate related data before returning
     await testCase.populate("assigned.user", "name email");
