@@ -1,4 +1,8 @@
 import { TestCase } from "~~/models";
+import {
+  assertJsonWithinLimits,
+  errorStatusCode,
+} from "~~/server/utils/jsonLimits";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -29,6 +33,21 @@ export default defineEventHandler(async (event) => {
 
     if (method === "PATCH") {
       const { _method, ...updateData } = body;
+
+      if ("original" in updateData) {
+        assertJsonWithinLimits(updateData.original, "original");
+      }
+      if ("validated" in updateData) {
+        if (!Array.isArray(updateData.validated)) {
+          throw createError({
+            statusCode: 400,
+            statusMessage: "validated must be an array",
+          });
+        }
+        updateData.validated.forEach((entry: { data?: unknown }, i: number) =>
+          assertJsonWithinLimits(entry?.data, `validated[${i}].data`),
+        );
+      }
 
       const updatedTestCase = await TestCase.findByIdAndUpdate(
         testCaseId,
@@ -63,7 +82,7 @@ export default defineEventHandler(async (event) => {
     return testCase;
   } catch (error: any) {
     throw createError({
-      statusCode: error.statusCode || 500,
+      statusCode: errorStatusCode(error),
       statusMessage: error.statusMessage || "Internal server error",
     });
   }

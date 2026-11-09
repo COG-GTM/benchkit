@@ -15,7 +15,12 @@ export default defineEventHandler(async (event) => {
       filter["assigned.user"] = query.user;
     }
 
-    const testCases = await TestCase.find(filter)
+    // Summary mode omits the JSON payloads so list views stay small; fetch a
+    // single test case to get `original` and `validated.data`.
+    const projection =
+      query.summary === "true" ? "-original -validated.data" : undefined;
+
+    const testCases = await TestCase.find(filter, projection)
       .populate("assigned.user", "name email")
       .populate("assigned.project", "name")
       .populate("validated.user", "name email")

@@ -1,8 +1,13 @@
 import { TestCase } from "~~/models";
+import {
+  assertJsonWithinLimits,
+  errorStatusCode,
+} from "~~/server/utils/jsonLimits";
 
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
+    assertJsonWithinLimits(body?.original, "original");
 
     const testCase = new TestCase({
       inputs: body.inputs,
@@ -20,8 +25,8 @@ export default defineEventHandler(async (event) => {
     return testCase;
   } catch (error: any) {
     throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to create test case",
+      statusCode: errorStatusCode(error),
+      statusMessage: error.statusMessage || "Failed to create test case",
       data: error,
     });
   }
