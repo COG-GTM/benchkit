@@ -11,9 +11,14 @@ export default defineEventHandler((event) => {
   if (EXEMPT_PATHS.some((p) => event.path.split("?")[0] === p)) return;
 
   // Without a declared length (chunked, or HTTP/2 framing) the size cannot be
-  // checked before readBody buffers it, so require one.
+  // checked before readBody buffers it, so require one. An HTTP/1.x request
+  // with neither header has no body.
   const contentLength = getRequestHeader(event, "content-length");
   if (contentLength === undefined) {
+    const mayHaveBody =
+      getRequestHeader(event, "transfer-encoding") !== undefined ||
+      event.node.req.httpVersionMajor >= 2;
+    if (!mayHaveBody) return;
     throw createError({
       statusCode: 411,
       statusMessage: "Content-Length required",
