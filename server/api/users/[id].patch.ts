@@ -10,10 +10,22 @@ export default defineEventHandler(async (event) => {
     const body = await readJsonObject(event);
 
     if (!isAdmin(caller)) {
-      const restricted = ADMIN_EDITABLE_FIELDS.filter(
-        (field) =>
-          !SELF_EDITABLE_FIELDS.includes(field) && body[field] !== undefined,
-      );
+      const current = await User.findById(userId);
+      if (!current) {
+        throw createError({ statusCode: 404, statusMessage: "User not found" });
+      }
+      // The edit form echoes every field back, so only reject actual changes.
+      const restricted = ADMIN_EDITABLE_FIELDS.filter((field) => {
+        const value = body[field];
+        if (SELF_EDITABLE_FIELDS.includes(field) || value === undefined) {
+          return false;
+        }
+        // Non-admins never receive azureId, so the form sends it back empty.
+        if (field === "azureId" && !value) {
+          return false;
+        }
+        return value !== current.get(field);
+      });
       if (restricted.length) {
         throw createError({
           statusCode: 403,
