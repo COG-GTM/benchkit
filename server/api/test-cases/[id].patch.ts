@@ -31,9 +31,10 @@ export default defineEventHandler(async (event) => {
     }
 
     if (Object.keys(update).length === 0) {
-      return await TestCase.findById(testCase._id)
-        .populate("assigned.project", "name")
-        .populate("assigned.user", "name email");
+      return await testCase.populate([
+        { path: "assigned.project", select: "name" },
+        { path: "assigned.user", select: "name email" },
+      ]);
     }
 
     if (update.assigned) {
