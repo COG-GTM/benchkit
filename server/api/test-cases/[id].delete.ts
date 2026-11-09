@@ -4,7 +4,14 @@ export default defineEventHandler(async (event) => {
   try {
     const { testCase } = await authorizeTestCase(event, "delete");
 
-    await TestCase.findByIdAndDelete(testCase._id);
+    const deleted = await TestCase.findByIdAndDelete(testCase._id);
+
+    if (!deleted) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Test case not found",
+      });
+    }
 
     return { success: true, message: "Test case deleted successfully" };
   } catch (error) {
