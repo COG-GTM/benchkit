@@ -7,6 +7,7 @@ export type AuthenticatedUser = HydratedDocument<IUser>;
 declare module "h3" {
   interface H3EventContext {
     user?: AuthenticatedUser | null;
+    userLookupFailed?: boolean;
   }
 }
 
@@ -37,6 +38,13 @@ export async function resolveRequestUser(
 
 export function requireUser(event: H3Event): AuthenticatedUser {
   const user = event.context.user;
+
+  if (event.context.userLookupFailed) {
+    throw createError({
+      statusCode: 503,
+      statusMessage: "Unable to verify user",
+    });
+  }
 
   if (!user) {
     throw createError({

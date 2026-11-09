@@ -6,8 +6,9 @@ export default defineEventHandler(async (event) => {
   try {
     event.context.user = await resolveRequestUser(event);
   } catch (error) {
-    // Fail closed without breaking routes that do not need a caller.
+    // Only routes that need a caller fail (with 503 via requireUser).
     console.error("Failed to resolve request user:", error);
     event.context.user = null;
+    event.context.userLookupFailed = true;
   }
 });
