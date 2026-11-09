@@ -2,7 +2,12 @@ import { promises as fs } from "fs";
 import path from "path";
 
 export default defineEventHandler(async (event) => {
-  const name = getRouterParam(event, "name") || "";
+  let name = "";
+  try {
+    name = decodeURIComponent(getRouterParam(event, "name") || "");
+  } catch {
+    // Malformed escape sequence; falls through to 404
+  }
   const allowed = getAllowedUpload(name);
 
   const isKnownName = isStoredUploadName(name) || isLegacyUploadName(name);

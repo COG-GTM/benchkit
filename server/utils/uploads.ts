@@ -81,8 +81,10 @@ export const ALLOWED_UPLOAD_EXTENSIONS = Object.keys(ALLOWED_UPLOADS);
 // Server-generated names only: <uuid>.<allowed extension>
 const STORED_UPLOAD_NAME = /^[0-9a-f-]{36}\.(pdf|png|jpe?g|gif|webp|txt|json)$/;
 // Names written by the previous upload handler into public/uploads
+// (any client basename, so allow Unicode but no separators or control chars)
 const LEGACY_UPLOAD_NAME =
-  /^[\w .()-]+_\d{13}\.(pdf|png|jpe?g|gif|webp|txt|json)$/i;
+  // eslint-disable-next-line no-control-regex
+  /^[^/\\\x00-\x1f]+_\d{13}\.(pdf|png|jpe?g|gif|webp|txt|json)$/i;
 
 export function getUploadDir() {
   return process.env.UPLOAD_DIR || path.join(process.cwd(), ".data/uploads");
