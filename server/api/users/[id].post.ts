@@ -1,3 +1,4 @@
+import { isValidObjectId, Types } from "mongoose";
 import { User } from "~~/models";
 
 export default defineEventHandler(async (event) => {
@@ -56,7 +57,9 @@ export default defineEventHandler(async (event) => {
     }
 
     // Default GET behavior
-    const isSelf = caller._id.toString() === userId;
+    const isSelf =
+      isValidObjectId(userId) &&
+      new Types.ObjectId(userId).equals(String(caller._id));
     const user = isAdmin(caller)
       ? await User.findById(userId)
       : isSelf
