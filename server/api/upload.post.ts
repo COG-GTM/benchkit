@@ -41,7 +41,8 @@ export default defineEventHandler(async (event) => {
           originalName
             .slice(0, dot)
             .replace(/[^A-Za-z0-9._-]+/g, "_")
-            .replace(/^\.+/, "") || "file";
+            .replace(/^\.+/, "")
+            .slice(0, 100) || "file";
         const suffix = randomBytes(4).toString("hex");
         const uniqueFilename = `${baseName}_${timestamp}_${suffix}${extension}`;
         const filePath = path.join(uploadDir, uniqueFilename);
