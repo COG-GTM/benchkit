@@ -1,6 +1,12 @@
 import { Project, TestCase, User } from "~~/models";
 import { parseTestCaseUpdate } from "../../utils/testCaseUpdate";
 
+function assignmentKey(list: { project: unknown; user?: unknown }[]) {
+  return list
+    .map((a) => `${String(a.project)}:${a.user ? String(a.user) : ""}`)
+    .join(",");
+}
+
 export default defineEventHandler(async (event) => {
   try {
     const { caller, testCase } = await authorizeTestCase(event, "update");
@@ -15,24 +21,28 @@ export default defineEventHandler(async (event) => {
 
     const update = parseTestCaseUpdate(await readBody(event));
 
+    // The edit form resends `assigned` as-is; an identical list (same order)
+    // is not a reassignment, so drop it instead of running the owner check.
+    if (
+      update.assigned &&
+      assignmentKey(update.assigned) === assignmentKey(testCase.assigned)
+    ) {
+      delete update.assigned;
+    }
+
+    if (Object.keys(update).length === 0) {
+      return await TestCase.findById(testCase._id)
+        .populate("assigned.project", "name")
+        .populate("assigned.user", "name email");
+    }
+
     if (update.assigned) {
       const newProjects = update.assigned.map((a) => a.project);
       const newUsers = update.assigned.flatMap((a) => (a.user ? [a.user] : []));
 
-      // The edit form resends `assigned` unchanged, so only a real change
-      // needs the owner check below.
-      const assignmentKey = (list: { project: unknown; user?: unknown }[]) =>
-        list
-          .map((a) => `${String(a.project)}:${a.user ? String(a.user) : ""}`)
-          .sort()
-          .join(",");
-      const assignmentChanged =
-        assignmentKey(update.assigned) !== assignmentKey(testCase.assigned);
-
       // Reassignment is a project-owner decision: a non-admin must own every
       // project the case currently belongs to and every project it moves to.
       if (
-        assignmentChanged &&
         !isAdmin(caller) &&
         !(await ownsAllProjects(caller, [
           ...testCase.assigned.map((a) => a.project),
