@@ -33,6 +33,8 @@ If MongoDB is running elsewhere, update `MONGODB_URI` in `.env` and run:
 pnpm dev:standalone
 ```
 
+To load sample data into a local database, run `pnpm db:seed`. This deletes all users, projects and test cases in the database at `MONGODB_URI` before inserting fixtures, so never point it at a shared or production database.
+
 ## Tech Stack
 
 Nuxt 4, Vue 3, TypeScript, MongoDB / Mongoose, Nuxt UI, Tailwind CSS

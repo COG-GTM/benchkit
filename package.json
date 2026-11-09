@@ -7,6 +7,7 @@
     "dev:nuxt": "nuxt dev",
     "dev:standalone": "nuxt dev",
     "db:start": "mkdir -p ./data/db && mongod --dbpath ./data/db --port 27017 --quiet --logpath /dev/null",
+    "db:seed": "tsx scripts/seed.ts",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
