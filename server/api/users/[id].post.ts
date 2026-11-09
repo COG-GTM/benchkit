@@ -1,6 +1,9 @@
+import { isValidObjectId, Types } from "mongoose";
 import { User } from "~~/models";
 
 export default defineEventHandler(async (event) => {
+  const caller = await requireUser(event);
+
   try {
     const userId = getRouterParam(event, "id");
 
@@ -13,6 +16,13 @@ export default defineEventHandler(async (event) => {
 
     const body = await readBody(event);
     const method = body._method || "GET";
+
+    if (method !== "GET" && !isAdmin(caller)) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Admin access required",
+      });
+    }
 
     if (method === "DELETE") {
       const result = await User.findByIdAndDelete(userId);
@@ -47,7 +57,14 @@ export default defineEventHandler(async (event) => {
     }
 
     // Default GET behavior
-    const user = await User.findById(userId);
+    const isSelf =
+      isValidObjectId(userId) &&
+      new Types.ObjectId(userId).equals(String(caller._id));
+    const user = isAdmin(caller)
+      ? await User.findById(userId)
+      : isSelf
+        ? await User.findById(userId, "-azureId")
+        : await User.findById(userId, PUBLIC_USER_FIELDS);
 
     if (!user) {
       throw createError({

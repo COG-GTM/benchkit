@@ -33,6 +33,12 @@ If MongoDB is running elsewhere, update `MONGODB_URI` in `.env` and run:
 pnpm dev:standalone
 ```
 
+## Authentication
+
+The `/api/users` routes require a signed-in caller. BenchKit expects to run behind [Azure App Service Authentication](https://learn.microsoft.com/azure/app-service/overview-authentication-authorization) (Easy Auth), which signs users in with Entra ID and sets the `X-MS-CLIENT-PRINCIPAL-ID` / `X-MS-CLIENT-PRINCIPAL-NAME` request headers. The caller is the user whose `azureId` matches the principal id (or, for users with no `azureId`, whose `email` matches the principal name). Do not expose the app without Easy Auth or an equivalent proxy that strips client-supplied copies of these headers.
+
+Admins get the full user directory and can create, update and delete users; other users only see each user's `_id` and `name`.
+
 ## Tech Stack
 
 Nuxt 4, Vue 3, TypeScript, MongoDB / Mongoose, Nuxt UI, Tailwind CSS
