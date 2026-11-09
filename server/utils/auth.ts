@@ -38,7 +38,7 @@ export async function resolveUser(
   if (!user && principalName?.trim()) {
     user = await User.findOne({
       email: principalName.trim().toLowerCase(),
-      azureId: null,
+      azureId: { $in: [null, ""] },
     });
   }
 
