@@ -1,6 +1,9 @@
 import { Project, TestCase, User } from "~~/models";
 
 export default defineEventHandler(async (event) => {
+  // Wipes and recreates every collection, so only admins may run it.
+  requireAdmin(event);
+
   try {
     // Clear existing data (optional, for development)
     await User.deleteMany({});

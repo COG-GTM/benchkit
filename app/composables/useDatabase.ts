@@ -17,15 +17,14 @@ export const useUsers = () => {
     userData: Partial<IUser>,
   ): Promise<IUser> => {
     return await $fetch(`/api/users/${id}`, {
-      method: "POST",
-      body: { ...userData, _method: "PATCH" },
+      method: "PATCH",
+      body: userData,
     });
   };
 
   const deleteUser = async (id: string): Promise<void> => {
     return await $fetch(`/api/users/${id}`, {
-      method: "POST",
-      body: { _method: "DELETE" },
+      method: "DELETE",
     });
   };
 
