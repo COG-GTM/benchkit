@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     await fs.mkdir(uploadDir, { recursive: true });
 
     for (const file of files) {
-      if (file.filename && !getInputFileType(file.filename)) {
+      if (file.filename && !getInputFileType(path.basename(file.filename))) {
         throw createError({
           statusCode: 400,
           statusMessage: `Unsupported file type: ${path.extname(file.filename) || file.filename}`,
@@ -29,14 +29,16 @@ export default defineEventHandler(async (event) => {
 
     for (const file of files) {
       if (file.filename && file.data) {
-        const type = getInputFileType(file.filename)!;
+        const type = getInputFileType(path.basename(file.filename))!;
 
         // Generate unique filename
         const timestamp = Date.now();
-        const extension = path.extname(file.filename).toLowerCase();
+        const originalName = path.basename(file.filename);
+        const dot = originalName.lastIndexOf(".");
+        const extension = originalName.slice(dot).toLowerCase();
         const baseName =
-          path
-            .basename(file.filename, path.extname(file.filename))
+          originalName
+            .slice(0, dot)
             .replace(/[^A-Za-z0-9._-]+/g, "_")
             .replace(/^\.+/, "") || "file";
         const uniqueFilename = `${baseName}_${timestamp}${extension}`;
