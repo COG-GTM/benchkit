@@ -2,17 +2,29 @@ import { User } from "~~/models";
 
 export default defineEventHandler(async (event) => {
   try {
-    const body = await readBody(event);
+    requireAdmin(event);
+    const body = await readJsonObject(event);
 
-    const userData: any = {
+    for (const field of ["email", "name", "role", "azureId"]) {
+      const value = body[field];
+      if (value !== undefined && value !== null && typeof value !== "string") {
+        throw createError({
+          statusCode: 400,
+          statusMessage: `${field} must be a string`,
+        });
+      }
+    }
+
+    const userData: Record<string, unknown> = {
       email: body.email,
       name: body.name,
       role: body.role || "user",
     };
 
     // Only add azureId if it's provided and not empty
-    if (body.azureId && body.azureId.trim() !== "") {
-      userData.azureId = body.azureId;
+    const azureId = (body.azureId as string | undefined)?.trim();
+    if (azureId) {
+      userData.azureId = azureId;
     }
 
     const user = new User(userData);
@@ -20,19 +32,9 @@ export default defineEventHandler(async (event) => {
     await user.save();
 
     // Return user without sensitive data
-    const { azureId, ...userResponse } = user.toObject();
+    const { azureId: _azureId, ...userResponse } = user.toObject();
     return userResponse;
-  } catch (error: any) {
-    if (error.code === 11000) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: "User already exists",
-      });
-    }
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to create user",
-      data: error,
-    });
+  } catch (error) {
+    throw toHttpError(error, "Failed to create user");
   }
 });

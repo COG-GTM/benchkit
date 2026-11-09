@@ -15,6 +15,14 @@ export default defineNuxtConfig({
     modelsDir: "models",
     devtools: true,
   },
+  runtimeConfig: {
+    auth: {
+      // "easyauth" (Azure App Service authentication) or "dev" (nuxt dev only).
+      // Set via NUXT_AUTH_MODE / NUXT_AUTH_DEV_USER_EMAIL.
+      mode: "",
+      devUserEmail: "",
+    },
+  },
   css: ["~/assets/css/main.css"],
   app: {
     head: {

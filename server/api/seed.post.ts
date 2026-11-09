@@ -1,6 +1,10 @@
 import { Project, TestCase, User } from "~~/models";
 
 export default defineEventHandler(async (event) => {
+  // Wipes and recreates every collection, so only admins may run it.
+  const caller = requireAdmin(event);
+  const { email, name, azureId } = caller;
+
   try {
     // Clear existing data (optional, for development)
     await User.deleteMany({});
@@ -8,21 +12,34 @@ export default defineEventHandler(async (event) => {
     await TestCase.deleteMany({});
 
     // Create sample users
+    // The seeded admin keeps the caller's identity so they can still sign in.
     const adminUser = await User.create({
-      email: "admin@example.com",
-      name: "Admin User",
+      email,
+      name,
       role: "admin",
-      azureId: "azure-admin-id",
+      azureId,
     });
 
-    const reviewerUser = await User.create({
+    // A sample user sharing the caller's email or azureId would violate the
+    // unique indexes after the wipe, so the caller stands in for it.
+    const createSampleUser = (sample: {
+      email: string;
+      name: string;
+      role: "reviewer" | "user";
+      azureId: string;
+    }) =>
+      sample.email === email || sample.azureId === azureId
+        ? adminUser
+        : User.create(sample);
+
+    const reviewerUser = await createSampleUser({
       email: "reviewer@example.com",
       name: "Reviewer User",
       role: "reviewer",
       azureId: "azure-reviewer-id",
     });
 
-    const regularUser = await User.create({
+    const regularUser = await createSampleUser({
       email: "user@example.com",
       name: "Regular User",
       role: "user",
@@ -107,7 +124,7 @@ export default defineEventHandler(async (event) => {
       success: true,
       message: "Database seeded successfully",
       data: {
-        users: 3,
+        users: await User.countDocuments(),
         projects: 2,
         testCases: testCases.length,
       },

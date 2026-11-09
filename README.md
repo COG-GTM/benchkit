@@ -33,6 +33,17 @@ If MongoDB is running elsewhere, update `MONGODB_URI` in `.env` and run:
 pnpm dev:standalone
 ```
 
+## Authentication
+
+Every `/api/*` request must resolve to a BenchKit user, otherwise it gets `401`. User management (`POST/DELETE /api/users`, changing `role`, `email` or `azureId`) and `POST /api/seed` require `role: "admin"`; other users may only read and rename their own account. Cross-site writes (`Sec-Fetch-Site`/`Origin` from another site) get `403`.
+
+| `NUXT_AUTH_MODE` | Caller identity                                                                                                 |
+| ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| `easyauth`       | Azure App Service authentication; `x-ms-client-principal-id` must equal the user's `azureId` (Entra object id). |
+| `dev`            | `pnpm dev` only; every request acts as `NUXT_AUTH_DEV_USER_EMAIL`.                                              |
+
+Bootstrap the first admin with `npx tsx scripts/seed.ts` (or set `azureId` on an existing admin directly in MongoDB).
+
 ## Tech Stack
 
 Nuxt 4, Vue 3, TypeScript, MongoDB / Mongoose, Nuxt UI, Tailwind CSS

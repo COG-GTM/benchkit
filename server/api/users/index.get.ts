@@ -2,13 +2,21 @@ import { User } from "~~/models";
 
 export default defineEventHandler(async (event) => {
   try {
-    const users = await User.find();
-    return users;
+    const caller = requireAuth(event);
+
+    if (isAdmin(caller)) {
+      return await User.find();
+    }
+
+    // Non-admins only get the directory fields needed to render assignments,
+    // plus their own record so the edit form can show their email.
+    const users = await User.find().select("name role");
+    return users.map((user) =>
+      String(user._id) === String(caller._id)
+        ? serializeUser(caller, caller)
+        : user,
+    );
   } catch (error) {
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to fetch users",
-      data: error,
-    });
+    throw toHttpError(error, "Failed to fetch users");
   }
 });
