@@ -158,7 +158,12 @@
                     :rows="3"
                   />
                 </UFormField>
-                <UFormField label="Owner" name="owner" required>
+                <UFormField
+                  v-if="editingProjectId"
+                  label="Owner"
+                  name="owner"
+                  required
+                >
                   <USelect
                     v-model="newProject.ownerId"
                     :items="
@@ -825,9 +830,9 @@ const canCreateProject = computed(
   () =>
     newProject.value.name &&
     newProject.value.description &&
-    newProject.value.ownerId &&
-    typeof newProject.value.ownerId === "string" &&
-    newProject.value.ownerId.trim() !== "",
+    (!editingProjectId.value ||
+      (typeof newProject.value.ownerId === "string" &&
+        newProject.value.ownerId.trim() !== "")),
 );
 
 const canCreateTestCase = computed(
@@ -999,7 +1004,6 @@ const createProject = async () => {
       await createProjectApi({
         name: newProject.value.name,
         description: newProject.value.description,
-        owner: newProject.value.ownerId as any,
         members: validMembers as any[],
       });
 
@@ -1016,6 +1020,7 @@ const createProject = async () => {
     toast.add({
       title: isEditing ? "Update Failed" : "Creation Failed",
       description:
+        error.data?.statusMessage ||
         error.data?.message ||
         `Failed to ${isEditing ? "update" : "create"} project`,
       color: "error",
