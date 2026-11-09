@@ -333,6 +333,10 @@ const loadTestCases = async () => {
   }
 };
 
+// Only the stored `original` is editable; `filename`/`_id` are display data.
+const cloneOriginal = () =>
+  JSON.parse(JSON.stringify(currentTestCase.value?.original ?? {}));
+
 const loadCurrentSample = async () => {
   const summary = allSamples.value[currentIndex.value];
   const requestId = ++sampleRequestId;
@@ -345,7 +349,7 @@ const loadCurrentSample = async () => {
     const testCase = await getTestCase(summary._id);
     if (requestId !== sampleRequestId) return;
     currentTestCase.value = testCase;
-    validatedData.value = JSON.parse(JSON.stringify(originalData.value));
+    validatedData.value = cloneOriginal();
   } catch {
     if (requestId !== sampleRequestId) return;
     toast.add({
@@ -378,7 +382,7 @@ const onDataChange = (newData: any) => {
 
 // Reset to original data
 const resetData = () => {
-  validatedData.value = JSON.parse(JSON.stringify(originalData.value));
+  validatedData.value = cloneOriginal();
   toast.add({
     title: "Reset",
     description: "Data reset to original",
