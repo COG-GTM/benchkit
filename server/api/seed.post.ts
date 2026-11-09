@@ -52,12 +52,12 @@ export default defineEventHandler(async (event) => {
         inputs: [
           {
             type: "pdf",
-            file: `public/samples/document_${i}.pdf`,
+            file: `/samples/document_${i}.pdf`,
             filename: `insurance_policy_${i}.pdf`,
           },
           {
             type: "img",
-            file: `public/samples/image_${i}.png`,
+            file: `/samples/image_${i}.png`,
             filename: `document_image_${i}.png`,
           },
         ],

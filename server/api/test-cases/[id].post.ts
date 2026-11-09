@@ -30,6 +30,11 @@ export default defineEventHandler(async (event) => {
     if (method === "PATCH") {
       const { _method, ...updateData } = body;
 
+      const inputsError = validateTestCaseInputs(updateData.inputs);
+      if (inputsError) {
+        throw createError({ statusCode: 400, statusMessage: inputsError });
+      }
+
       const updatedTestCase = await TestCase.findByIdAndUpdate(
         testCaseId,
         { ...updateData, updatedAt: new Date() },
