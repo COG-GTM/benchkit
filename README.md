@@ -33,6 +33,15 @@ If MongoDB is running elsewhere, update `MONGODB_URI` in `.env` and run:
 pnpm dev:standalone
 ```
 
+## Authentication
+
+Every `/api/**` route requires a signed-in user and returns `401` otherwise.
+
+- **Production** — run behind Azure App Service Authentication (Easy Auth) and set `NUXT_AUTH_TRUST_EASY_AUTH=true`. The `X-MS-CLIENT-PRINCIPAL-ID` header is matched against `User.azureId`. Only enable this when the app cannot be reached except through Easy Auth.
+- **Local development** — `NUXT_AUTH_DEV_USER_EMAIL` (set in `.env.example`) signs every request in as that user under `nuxt dev` and creates it as an admin if it does not exist. It is ignored in production builds.
+
+New projects are always owned by the signed-in user.
+
 ## Tech Stack
 
 Nuxt 4, Vue 3, TypeScript, MongoDB / Mongoose, Nuxt UI, Tailwind CSS

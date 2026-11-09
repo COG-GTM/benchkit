@@ -15,6 +15,17 @@ export default defineNuxtConfig({
     modelsDir: "models",
     devtools: true,
   },
+  runtimeConfig: {
+    auth: {
+      // NUXT_AUTH_TRUST_EASY_AUTH=true: identify callers by the Azure App
+      // Service Authentication principal header (mapped to User.azureId).
+      // Only enable when every request reaches the app through Easy Auth.
+      trustEasyAuth: false,
+      // NUXT_AUTH_DEV_USER_EMAIL: local `nuxt dev` only; signs every request
+      // in as this user (created as an admin if missing).
+      devUserEmail: "",
+    },
+  },
   css: ["~/assets/css/main.css"],
   app: {
     head: {
