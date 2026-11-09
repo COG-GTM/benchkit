@@ -5,7 +5,7 @@ import type { H3Event } from "h3";
 export default defineEventHandler(async (event) => {
   try {
     const limits = getBodyLimits(event);
-    await enforceBodyLimit(event, limits.maxUploadBytes);
+    await enforceBodyLimit(event, uploadRequestLimit(limits));
 
     const files = await readUploadedFiles(event);
 
@@ -32,6 +32,11 @@ export default defineEventHandler(async (event) => {
         limits.maxUploadFileBytes,
         `File "${path.basename(oversized.name)}"`,
       );
+    }
+
+    const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+    if (totalBytes > limits.maxUploadBytes) {
+      throw payloadTooLarge(limits.maxUploadBytes, "Uploaded files");
     }
 
     const uploadedFiles = [];

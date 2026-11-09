@@ -6,6 +6,6 @@ export default defineEventHandler(async (event) => {
 
   await enforceBodyLimit(
     event,
-    isUpload ? limits.maxUploadBytes : limits.maxJsonBodyBytes,
+    isUpload ? uploadRequestLimit(limits) : limits.maxJsonBodyBytes,
   );
 });

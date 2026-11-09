@@ -9,6 +9,17 @@ export function getBodyLimits(event?: H3Event) {
   return useRuntimeConfig(event).public.bodyLimits;
 }
 
+// Multipart boundaries and part headers sit on top of the file bytes, so the
+// raw body may exceed maxUploadBytes by this much per file; the file bytes
+// themselves are checked against maxUploadBytes after parsing.
+const MULTIPART_OVERHEAD_PER_FILE = 4 * 1024;
+
+export function uploadRequestLimit(limits: ReturnType<typeof getBodyLimits>) {
+  return (
+    limits.maxUploadBytes + limits.maxUploadFiles * MULTIPART_OVERHEAD_PER_FILE
+  );
+}
+
 export function payloadTooLarge(limit: number, what = "Request body") {
   return createError({
     statusCode: 413,
