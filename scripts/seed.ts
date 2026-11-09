@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { pathToFileURL } from "node:url";
 import { Project, TestCase, User } from "../models";
 
 async function seedDatabase() {
@@ -78,7 +79,10 @@ async function seedDatabase() {
 }
 
 // Run if called directly
-if (require.main === module) {
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
   seedDatabase();
 }
 

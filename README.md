@@ -33,6 +33,10 @@ If MongoDB is running elsewhere, update `MONGODB_URI` in `.env` and run:
 pnpm dev:standalone
 ```
 
+## Authentication
+
+Every `/api` route requires an Entra ID token issued by `AZURE_TENANT_ID` for `AZURE_CLIENT_ID`, sent as `Authorization: Bearer <token>` or forwarded by Azure App Service Authentication (`X-MS-TOKEN-AAD-ID-TOKEN`, token store enabled). The token's `oid` claim must match a user's `azureId`; anonymous or unknown callers get `401`. Admins see all projects, other users only projects they own or belong to. Seed initial users with `scripts/seed.ts`.
+
 ## Tech Stack
 
 Nuxt 4, Vue 3, TypeScript, MongoDB / Mongoose, Nuxt UI, Tailwind CSS
