@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { promises as fs } from "fs";
 import path from "path";
 
@@ -41,11 +42,12 @@ export default defineEventHandler(async (event) => {
             .slice(0, dot)
             .replace(/[^A-Za-z0-9._-]+/g, "_")
             .replace(/^\.+/, "") || "file";
-        const uniqueFilename = `${baseName}_${timestamp}${extension}`;
+        const suffix = randomBytes(4).toString("hex");
+        const uniqueFilename = `${baseName}_${timestamp}_${suffix}${extension}`;
         const filePath = path.join(uploadDir, uniqueFilename);
 
         // Write file to disk
-        await fs.writeFile(filePath, file.data);
+        await fs.writeFile(filePath, file.data, { flag: "wx" });
 
         // Return relative path for database storage
         const relativePath = `/uploads/${uniqueFilename}`;
