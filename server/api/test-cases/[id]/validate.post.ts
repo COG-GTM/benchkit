@@ -1,9 +1,14 @@
 import { TestCase } from "~~/models";
+import {
+  assertJsonWithinLimits,
+  errorStatusCode,
+} from "~~/server/utils/jsonLimits";
 
 export default defineEventHandler(async (event) => {
   try {
     const testCaseId = getRouterParam(event, "id");
     const body = await readBody(event);
+    assertJsonWithinLimits(body?.data, "data");
 
     const testCase = await TestCase.findById(testCaseId);
 
@@ -32,8 +37,8 @@ export default defineEventHandler(async (event) => {
     return testCase;
   } catch (error: any) {
     throw createError({
-      statusCode: 500,
-      statusMessage: "Failed to validate test case",
+      statusCode: errorStatusCode(error),
+      statusMessage: error.statusMessage || "Failed to validate test case",
       data: error,
     });
   }

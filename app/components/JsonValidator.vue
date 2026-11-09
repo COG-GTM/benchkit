@@ -2,7 +2,7 @@
   <div class="space-y-4">
     <!-- Group simple fields by pairs -->
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <template v-for="(value, key) in modelValue" :key="key">
+      <template v-for="[key, value] in visibleEntries" :key="key">
         <!-- Simple Field (String/Number/Boolean) -->
         <UFormField
           v-if="isSimpleType(value)"
@@ -35,7 +35,7 @@
 
     <!-- Complex fields (Arrays and Objects) take full width -->
     <div class="space-y-6">
-      <template v-for="(value, key) in modelValue" :key="key">
+      <template v-for="[key, value] in visibleEntries" :key="key">
         <!-- Array Field -->
         <div v-if="Array.isArray(value)" class="space-y-4">
           <div class="border-l border-gray-300 pl-4">
@@ -45,7 +45,7 @@
 
             <div class="space-y-3">
               <div
-                v-for="(item, index) in value"
+                v-for="(item, index) in visibleItems(key, value)"
                 :key="`${key}-${index}`"
                 class="space-y-2 border-l border-gray-200 pl-3"
               >
@@ -77,6 +77,17 @@
                   />
                 </div>
               </div>
+              <UButton
+                v-if="value.length > visibleItemCount(key)"
+                variant="link"
+                color="neutral"
+                size="xs"
+                @click="showMoreItems(key)"
+              >
+                Show
+                {{ Math.min(PAGE_SIZE, value.length - visibleItemCount(key)) }}
+                more items ({{ value.length - visibleItemCount(key) }} hidden)
+              </UButton>
             </div>
           </div>
         </div>
@@ -98,6 +109,19 @@
         </div>
       </template>
     </div>
+
+    <UButton
+      v-if="hiddenFieldCount > 0"
+      variant="link"
+      color="neutral"
+      size="xs"
+      @click="visibleFieldCount += PAGE_SIZE"
+    >
+      Show {{ Math.min(PAGE_SIZE, hiddenFieldCount) }} more fields ({{
+        hiddenFieldCount
+      }}
+      hidden)
+    </UButton>
   </div>
 </template>
 
@@ -112,6 +136,27 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+// Render fields and array items in pages so a large document cannot create
+// an unbounded component tree in one go.
+const PAGE_SIZE = 50;
+
+const visibleFieldCount = ref(PAGE_SIZE);
+const allEntries = computed(() => Object.entries(props.modelValue ?? {}));
+const visibleEntries = computed(() =>
+  allEntries.value.slice(0, visibleFieldCount.value),
+);
+const hiddenFieldCount = computed(() =>
+  Math.max(0, allEntries.value.length - visibleFieldCount.value),
+);
+
+const itemCounts = reactive<Record<string, number>>({});
+const visibleItemCount = (key: string) => itemCounts[key] ?? PAGE_SIZE;
+const visibleItems = (key: string, items: unknown[]) =>
+  items.slice(0, visibleItemCount(key));
+const showMoreItems = (key: string) => {
+  itemCounts[key] = visibleItemCount(key) + PAGE_SIZE;
+};
 
 // Helper function to check if a value is a simple type (string, number, boolean)
 const isSimpleType = (value: any): boolean => {

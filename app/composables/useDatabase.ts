@@ -80,9 +80,17 @@ export const useTestCases = () => {
   const getTestCases = async (query?: {
     project?: string;
     user?: string;
+    summary?: boolean;
   }): Promise<ITestCase[]> => {
     return await $fetch("/api/test-cases", {
       query,
+    });
+  };
+
+  const getTestCase = async (id: string): Promise<ITestCase> => {
+    return await $fetch(`/api/test-cases/${id}`, {
+      method: "POST",
+      body: {},
     });
   };
 
@@ -128,6 +136,7 @@ export const useTestCases = () => {
 
   return {
     getTestCases,
+    getTestCase,
     createTestCase,
     updateTestCase,
     deleteTestCase,

@@ -237,7 +237,15 @@
         </template>
 
         <div class="h-[68dvh] overflow-auto rounded-lg bg-gray-50/30 p-2">
+          <div v-if="isLoadingSample" class="py-12 text-center">
+            <UIcon
+              name="i-heroicons-arrow-path"
+              class="mx-auto h-8 w-8 animate-spin text-gray-400"
+            />
+          </div>
           <JsonValidator
+            v-else
+            :key="originalData._id ?? 'none'"
             v-model="validatedData"
             @update:model-value="onDataChange"
           />
@@ -251,7 +259,7 @@
 import type { ITestCase } from "~~/models";
 
 const toast = useToast();
-const { getTestCases, validateTestCase } = useTestCases();
+const { getTestCases, getTestCase, validateTestCase } = useTestCases();
 
 defineShortcuts({
   meta_enter: () => submitValidation(),
@@ -265,13 +273,19 @@ const currentIndex = ref(0);
 const totalSamples = computed(() => allSamples.value.length);
 const isLoading = ref(true);
 const isSubmitting = ref(false);
+const isLoadingSample = ref(false);
+
+// Full record (with `original`) for the sample being reviewed; the list only
+// holds summaries so the page never downloads every payload at once.
+const currentTestCase = ref<ITestCase | null>(null);
+let sampleRequestId = 0;
 
 // Input file navigation
 const currentInputFileIndex = ref(0);
 
 // Current sample data
 const originalData = computed(() => {
-  const current = allSamples.value[currentIndex.value];
+  const current = currentTestCase.value;
   if (!current) return { filename: "No file", _id: null };
   return {
     ...current.original,
@@ -291,7 +305,7 @@ const progress = computed(
 const loadTestCases = async () => {
   isLoading.value = true;
   try {
-    const testCases = await getTestCases();
+    const testCases = await getTestCases({ summary: true });
 
     // Filter for unvalidated test cases or those with partial validation
     allSamples.value = testCases.filter(
@@ -299,9 +313,7 @@ const loadTestCases = async () => {
     );
 
     if (allSamples.value.length > 0) {
-      validatedData.value = JSON.parse(
-        JSON.stringify(allSamples.value[0].original),
-      );
+      await loadCurrentSample();
     } else {
       toast.add({
         title: "No samples found",
@@ -321,18 +333,45 @@ const loadTestCases = async () => {
   }
 };
 
+// Only the stored `original` is editable; `filename`/`_id` are display data.
+const cloneOriginal = () =>
+  JSON.parse(JSON.stringify(currentTestCase.value?.original ?? {}));
+
+const loadCurrentSample = async () => {
+  const summary = allSamples.value[currentIndex.value];
+  const requestId = ++sampleRequestId;
+  currentTestCase.value = null;
+  validatedData.value = {};
+  if (!summary?._id) return;
+
+  isLoadingSample.value = true;
+  try {
+    const testCase = await getTestCase(summary._id);
+    if (requestId !== sampleRequestId) return;
+    currentTestCase.value = testCase;
+    validatedData.value = cloneOriginal();
+  } catch {
+    if (requestId !== sampleRequestId) return;
+    toast.add({
+      title: "Error loading sample",
+      description: "Failed to load the selected test case",
+      color: "error",
+    });
+  } finally {
+    if (requestId === sampleRequestId) isLoadingSample.value = false;
+  }
+};
+
 // Navigation functions
 const previousSample = () => {
   if (currentIndex.value > 0) {
     currentIndex.value--;
-    validatedData.value = JSON.parse(JSON.stringify(originalData.value));
   }
 };
 
 const nextSample = () => {
   if (currentIndex.value < totalSamples.value - 1) {
     currentIndex.value++;
-    validatedData.value = JSON.parse(JSON.stringify(originalData.value));
   }
 };
 
@@ -343,7 +382,7 @@ const onDataChange = (newData: any) => {
 
 // Reset to original data
 const resetData = () => {
-  validatedData.value = JSON.parse(JSON.stringify(originalData.value));
+  validatedData.value = cloneOriginal();
   toast.add({
     title: "Reset",
     description: "Data reset to original",
@@ -405,18 +444,20 @@ const submitValidation = async () => {
     // Remove the validated case from the list
     allSamples.value.splice(currentIndex.value, 1);
 
-    // Adjust current index if needed
-    if (
+    // Adjust current index if needed; the currentIndex watcher then loads it
+    const indexMoved =
       currentIndex.value >= allSamples.value.length &&
-      allSamples.value.length > 0
-    ) {
+      allSamples.value.length > 0;
+    if (indexMoved) {
       currentIndex.value = allSamples.value.length - 1;
     }
 
     // Load next sample if available
     if (allSamples.value.length > 0) {
-      validatedData.value = JSON.parse(JSON.stringify(originalData.value));
+      if (!indexMoved) await loadCurrentSample();
+      currentInputFileIndex.value = 0;
     } else {
+      currentTestCase.value = null;
       toast.add({
         title: "All done!",
         description: "No more samples to review",
@@ -507,8 +548,8 @@ onMounted(() => {
 // Watch for index changes to update validated data
 watch(currentIndex, () => {
   if (allSamples.value.length > 0) {
-    validatedData.value = JSON.parse(JSON.stringify(originalData.value));
     currentInputFileIndex.value = 0; // Reset input file index when changing samples
+    loadCurrentSample();
   }
 });
 

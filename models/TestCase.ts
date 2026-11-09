@@ -1,4 +1,8 @@
 import { model, Schema, Types } from "mongoose";
+import {
+  checkJsonLimits,
+  describeJsonLimitViolation,
+} from "../shared/jsonLimits";
 
 export interface ITestCaseInput {
   type: "pdf" | "img" | "txt" | "json";
@@ -27,6 +31,15 @@ export interface ITestCase {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+const boundedJson = (field: string) => ({
+  validator: (value: unknown) => checkJsonLimits(value) === null,
+  message: (props: { value: unknown }) =>
+    describeJsonLimitViolation(
+      field,
+      checkJsonLimits(props.value) ?? "too_large",
+    ),
+});
 
 const testCaseInputSchema = new Schema<ITestCaseInput>(
   {
@@ -81,6 +94,7 @@ const testCaseValidatedSchema = new Schema<ITestCaseValidated>(
     data: {
       type: Schema.Types.Mixed,
       required: true,
+      validate: boundedJson("validated.data"),
     },
   },
   { _id: false },
@@ -92,6 +106,7 @@ const testCaseSchema = new Schema<ITestCase>(
     original: {
       type: Schema.Types.Mixed,
       required: true,
+      validate: boundedJson("original"),
     },
     assigned: [testCaseAssignedSchema],
     validated: [testCaseValidatedSchema],

@@ -440,6 +440,10 @@
 import type { TableColumn, TabsItem } from "@nuxt/ui";
 import { h, nextTick, resolveComponent } from "vue";
 import type { IProject, ITestCase, IUser } from "~~/models";
+import {
+  checkJsonLimits,
+  describeJsonLimitViolation,
+} from "~~/shared/jsonLimits";
 
 const UButton = resolveComponent("UButton");
 const UBadge = resolveComponent("UBadge");
@@ -906,6 +910,16 @@ const handleExpectedOutputFileChange = async (event: Event) => {
   try {
     const text = await file.text();
     const jsonData = JSON.parse(text);
+
+    const violation = checkJsonLimits(jsonData);
+    if (violation) {
+      toast.add({
+        title: "Expected output rejected",
+        description: describeJsonLimitViolation("Expected output", violation),
+        color: "error",
+      });
+      return;
+    }
 
     newTestCase.value.expectedOutputFile = file;
     newTestCase.value.expectedOutputData = jsonData;
