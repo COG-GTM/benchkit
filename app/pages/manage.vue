@@ -446,6 +446,8 @@ const UBadge = resolveComponent("UBadge");
 const UCheckbox = resolveComponent("UCheckbox");
 
 const toast = useToast();
+const { bodyLimits } = useRuntimeConfig().public;
+const MB = 1024 * 1024;
 const {
   getUsers,
   createUser: createUserApi,
@@ -849,6 +851,26 @@ const handleInputFilesChange = async (event: Event) => {
 
   if (files.length === 0) return;
 
+  const tooLarge = files.find(
+    (file) => file.size > bodyLimits.maxUploadFileBytes,
+  );
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+  if (
+    tooLarge ||
+    files.length > bodyLimits.maxUploadFiles ||
+    totalBytes > bodyLimits.maxUploadBytes
+  ) {
+    toast.add({
+      title: "Upload Too Large",
+      description: tooLarge
+        ? `"${tooLarge.name}" is larger than ${bodyLimits.maxUploadFileBytes / MB} MB`
+        : `Select at most ${bodyLimits.maxUploadFiles} files totalling ${bodyLimits.maxUploadBytes / MB} MB`,
+      color: "error",
+    });
+    target.value = "";
+    return;
+  }
+
   isUploadingInputFiles.value = true;
   try {
     const formData = new FormData();
@@ -868,10 +890,13 @@ const handleInputFilesChange = async (event: Event) => {
       description: `${files.length} file(s) uploaded successfully`,
       color: "success",
     });
-  } catch (error) {
+  } catch (error: any) {
     toast.add({
       title: "Upload Failed",
-      description: "Failed to upload input files",
+      description:
+        error?.statusCode === 413
+          ? error.data?.message || "Upload is too large"
+          : "Failed to upload input files",
       color: "error",
     });
   } finally {
