@@ -1,5 +1,6 @@
-import { isValidObjectId } from "mongoose";
 import { Project, User } from "~~/models";
+
+const OBJECT_ID = /^[0-9a-f]{24}$/i;
 
 async function resolveMembers(members: unknown): Promise<string[]> {
   if (members === undefined || members === null) return [];
@@ -10,13 +11,14 @@ async function resolveMembers(members: unknown): Promise<string[]> {
     });
   }
 
-  const memberIds = [...new Set(members)];
-  if (!memberIds.every((id) => typeof id === "string" && isValidObjectId(id))) {
+  if (!members.every((id) => typeof id === "string" && OBJECT_ID.test(id))) {
     throw createError({
       statusCode: 400,
       statusMessage: "Members must be an array of user IDs",
     });
   }
+
+  const memberIds = [...new Set(members.map((id: string) => id.toLowerCase()))];
 
   const existing = await User.countDocuments({ _id: { $in: memberIds } });
   if (existing !== memberIds.length) {
@@ -26,7 +28,7 @@ async function resolveMembers(members: unknown): Promise<string[]> {
     });
   }
 
-  return memberIds as string[];
+  return memberIds;
 }
 
 export default defineEventHandler(async (event) => {
