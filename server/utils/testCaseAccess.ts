@@ -28,7 +28,8 @@ export async function ownsAllProjects(
 /**
  * Loads a test case and checks the caller may perform `action` on it.
  * Admins may do anything. Owners of a project the case is assigned to may
- * read, update and delete it. The assigned reviewer may read and update it.
+ * read and update it, and may delete it only if they own every assigned
+ * project. The assigned reviewer may read and update it.
  */
 export async function authorizeTestCase(
   event: H3Event,
@@ -70,7 +71,9 @@ export async function authorizeTestCase(
     })) !== null;
 
   const allowed =
-    action === "delete" ? ownsProject : ownsProject || isAssignedUser;
+    action === "delete"
+      ? ownsProject && (await ownsAllProjects(caller, projectIds))
+      : ownsProject || isAssignedUser;
 
   if (!allowed) {
     throw createError({
