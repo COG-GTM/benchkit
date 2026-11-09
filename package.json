@@ -17,6 +17,7 @@
     "@nuxt/test-utils": "^4.0.0",
     "@nuxt/ui": "^4.5.0",
     "eslint": "^10.0.2",
+    "jose": "^6.2.12",
     "jsondiffpatch": "^0.7.3",
     "mongoose": "^9.2.3",
     "nuxt": "^4.3.1",
