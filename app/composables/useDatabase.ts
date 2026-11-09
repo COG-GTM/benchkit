@@ -56,15 +56,14 @@ export const useProjects = () => {
     projectData: Partial<IProject>,
   ): Promise<IProject> => {
     return await $fetch(`/api/projects/${id}`, {
-      method: "POST",
-      body: { ...projectData, _method: "PATCH" },
+      method: "PATCH",
+      body: projectData,
     });
   };
 
   const deleteProject = async (id: string): Promise<void> => {
     return await $fetch(`/api/projects/${id}`, {
-      method: "POST",
-      body: { _method: "DELETE" },
+      method: "DELETE",
     });
   };
 
