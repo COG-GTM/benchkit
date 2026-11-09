@@ -2,7 +2,8 @@ import { Project, TestCase, User } from "~~/models";
 
 export default defineEventHandler(async (event) => {
   // Wipes and recreates every collection, so only admins may run it.
-  requireAdmin(event);
+  const caller = requireAdmin(event);
+  const { email, name, azureId } = caller;
 
   try {
     // Clear existing data (optional, for development)
@@ -11,11 +12,12 @@ export default defineEventHandler(async (event) => {
     await TestCase.deleteMany({});
 
     // Create sample users
+    // The seeded admin keeps the caller's identity so they can still sign in.
     const adminUser = await User.create({
-      email: "admin@example.com",
-      name: "Admin User",
+      email,
+      name,
       role: "admin",
-      azureId: "azure-admin-id",
+      azureId,
     });
 
     const reviewerUser = await User.create({
