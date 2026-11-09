@@ -74,21 +74,23 @@ export async function resolveAuthenticatedUser(
     return null;
   }
 
+  let oid: unknown;
   try {
     const { payload } = await jwtVerify(token, config.jwks, {
       issuer: config.issuer,
       audience: config.audiences,
       algorithms: ["RS256"],
     });
-
-    if (typeof payload.oid !== "string" || !payload.oid) {
-      return null;
-    }
-
-    return await User.findOne({ azureId: payload.oid });
+    oid = payload.oid;
   } catch {
     return null;
   }
+
+  if (typeof oid !== "string" || !oid) {
+    return null;
+  }
+
+  return await User.findOne({ azureId: oid });
 }
 
 export function requireAuth(event: H3Event): AuthenticatedUser {
