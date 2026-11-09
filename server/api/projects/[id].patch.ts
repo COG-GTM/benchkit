@@ -27,8 +27,9 @@ export default defineEventHandler(async (event) => {
     update.members = await parseUserIds(body.members, "members");
   }
 
-  const updatedProject = await Project.findByIdAndUpdate(
-    project._id,
+  // Match the owner that was authorised so a concurrent transfer wins.
+  const updatedProject = await Project.findOneAndUpdate(
+    { _id: project._id, owner: project.owner },
     { $set: update },
     { new: true, runValidators: true },
   )
@@ -37,8 +38,8 @@ export default defineEventHandler(async (event) => {
 
   if (!updatedProject) {
     throw createError({
-      statusCode: 404,
-      statusMessage: "Project not found",
+      statusCode: 409,
+      statusMessage: "Project was changed or deleted, please retry",
     });
   }
 
