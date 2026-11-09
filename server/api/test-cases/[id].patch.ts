@@ -19,9 +19,20 @@ export default defineEventHandler(async (event) => {
       const newProjects = update.assigned.map((a) => a.project);
       const newUsers = update.assigned.flatMap((a) => (a.user ? [a.user] : []));
 
+      // The edit form resends `assigned` unchanged, so only a real change
+      // needs the owner check below.
+      const assignmentKey = (list: { project: unknown; user?: unknown }[]) =>
+        list
+          .map((a) => `${String(a.project)}:${a.user ? String(a.user) : ""}`)
+          .sort()
+          .join(",");
+      const assignmentChanged =
+        assignmentKey(update.assigned) !== assignmentKey(testCase.assigned);
+
       // Reassignment is a project-owner decision: a non-admin must own every
       // project the case currently belongs to and every project it moves to.
       if (
+        assignmentChanged &&
         !isAdmin(caller) &&
         !(await ownsAllProjects(caller, [
           ...testCase.assigned.map((a) => a.project),
