@@ -33,6 +33,15 @@ If MongoDB is running elsewhere, update `MONGODB_URI` in `.env` and run:
 pnpm dev:standalone
 ```
 
+## Authentication
+
+Every `/api/*` route requires an authenticated BenchKit user and returns `401` otherwise. The caller is resolved from the `X-MS-CLIENT-PRINCIPAL-ID` / `X-MS-CLIENT-PRINCIPAL-NAME` headers set by Azure App Service Authentication (Easy Auth), matched against `User.azureId` (or `User.email` for users without an `azureId`). Easy Auth must be enabled in front of any deployment, since it is what strips client-supplied copies of these headers.
+
+- Projects can only be updated (`PATCH /api/projects/:id`) or deleted (`DELETE /api/projects/:id`) by their owner or an admin; only `name`, `description`, `owner` and `members` are editable.
+- Creating, editing or deleting users and running `POST /api/seed` require the `admin` role.
+
+For local development, set `BENCHKIT_DEV_USER_EMAIL` in `.env` to the email of an existing user (e.g. `admin@example.com` after running `pnpm tsx scripts/seed.ts`). It is only honoured by `nuxt dev`, never in production builds.
+
 ## Tech Stack
 
 Nuxt 4, Vue 3, TypeScript, MongoDB / Mongoose, Nuxt UI, Tailwind CSS

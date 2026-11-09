@@ -1,6 +1,8 @@
 import { User } from "~~/models";
 
 export default defineEventHandler(async (event) => {
+  requireAdmin(event);
+
   try {
     const body = await readBody(event);
 

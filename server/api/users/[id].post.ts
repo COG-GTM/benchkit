@@ -14,6 +14,10 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     const method = body._method || "GET";
 
+    if (method !== "GET") {
+      requireAdmin(event);
+    }
+
     if (method === "DELETE") {
       const result = await User.findByIdAndDelete(userId);
 
