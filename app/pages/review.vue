@@ -444,17 +444,17 @@ const submitValidation = async () => {
     // Remove the validated case from the list
     allSamples.value.splice(currentIndex.value, 1);
 
-    // Adjust current index if needed
-    if (
+    // Adjust current index if needed; the currentIndex watcher then loads it
+    const indexMoved =
       currentIndex.value >= allSamples.value.length &&
-      allSamples.value.length > 0
-    ) {
+      allSamples.value.length > 0;
+    if (indexMoved) {
       currentIndex.value = allSamples.value.length - 1;
     }
 
     // Load next sample if available
     if (allSamples.value.length > 0) {
-      await loadCurrentSample();
+      if (!indexMoved) await loadCurrentSample();
       currentInputFileIndex.value = 0;
     } else {
       currentTestCase.value = null;
