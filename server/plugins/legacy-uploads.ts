@@ -17,14 +17,16 @@ export default defineNitroPlugin(async () => {
 
   for (const name of entries) {
     const source = path.join(legacyDir, name);
+    let valid = false;
     try {
       const stat = await fs.lstat(source);
       if (!stat.isFile()) continue;
 
-      const data = await fs.readFile(source);
       const allowed = getAllowedUpload(name);
-      const valid =
-        isLegacyUploadName(name) && !!allowed && allowed.matches(data);
+      valid =
+        isLegacyUploadName(name) &&
+        !!allowed &&
+        allowed.matches(await fs.readFile(source));
 
       await moveFile(
         source,
@@ -36,7 +38,15 @@ export default defineNitroPlugin(async () => {
         );
       }
     } catch (error) {
-      console.error(`[uploads] Failed to migrate ${name}:`, error);
+      if (valid) {
+        console.error(`[uploads] Failed to migrate ${name}:`, error);
+        continue;
+      }
+      // Never leave an unvalidated file behind in the web root
+      await fs.rm(source, { force: true, recursive: true });
+      console.warn(
+        `[uploads] Deleted legacy upload that could not be moved: ${name}`,
+      );
     }
   }
 });
