@@ -15,6 +15,13 @@ export default defineNuxtConfig({
     modelsDir: "models",
     devtools: true,
   },
+  runtimeConfig: {
+    auth: {
+      // Override with NUXT_AUTH_TRUST_APP_SERVICE_HEADERS=true only when the
+      // app runs behind Azure App Service Authentication (Easy Auth).
+      trustAppServiceHeaders: false,
+    },
+  },
   css: ["~/assets/css/main.css"],
   app: {
     head: {

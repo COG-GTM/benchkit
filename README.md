@@ -33,6 +33,12 @@ If MongoDB is running elsewhere, update `MONGODB_URI` in `.env` and run:
 pnpm dev:standalone
 ```
 
+## Authentication
+
+Creating, editing and deleting users requires an authenticated `admin`. The server resolves the caller from the `X-MS-CLIENT-PRINCIPAL-ID` header set by [Azure App Service Authentication](https://learn.microsoft.com/azure/app-service/overview-authentication-authorization) and matches it against `User.azureId`. Header trust is off by default; set `NUXT_AUTH_TRUST_APP_SERVICE_HEADERS=true` only when the app is deployed behind App Service Authentication. Without it these requests return `401`, and non-admin callers get `403`.
+
+Create the first admin directly in MongoDB (or with `scripts/seed.ts`) with `azureId` set to their Entra ID object id.
+
 ## Tech Stack
 
 Nuxt 4, Vue 3, TypeScript, MongoDB / Mongoose, Nuxt UI, Tailwind CSS

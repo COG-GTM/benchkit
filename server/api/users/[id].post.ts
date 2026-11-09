@@ -1,5 +1,7 @@
 import { User } from "~~/models";
 
+const EDITABLE_FIELDS = ["name", "email", "role", "azureId"] as const;
+
 export default defineEventHandler(async (event) => {
   try {
     const userId = getRouterParam(event, "id");
@@ -13,6 +15,10 @@ export default defineEventHandler(async (event) => {
 
     const body = await readBody(event);
     const method = body._method || "GET";
+
+    if (method === "DELETE" || method === "PATCH") {
+      requireAdmin(event);
+    }
 
     if (method === "DELETE") {
       const result = await User.findByIdAndDelete(userId);
@@ -28,11 +34,29 @@ export default defineEventHandler(async (event) => {
     }
 
     if (method === "PATCH") {
-      const { _method, ...updateData } = body;
+      const updateData: Record<string, unknown> = {};
+      const unsetData: Record<string, 1> = {};
+
+      for (const field of EDITABLE_FIELDS) {
+        if (body[field] === undefined) continue;
+
+        // An emptied azureId is removed rather than stored as "" so the
+        // sparse unique index keeps ignoring users without an Azure identity.
+        if (field === "azureId" && !String(body[field] ?? "").trim()) {
+          unsetData.azureId = 1;
+          continue;
+        }
+
+        updateData[field] =
+          field === "azureId" ? String(body[field]).trim() : body[field];
+      }
 
       const updatedUser = await User.findByIdAndUpdate(
         userId,
-        { ...updateData, updatedAt: new Date() },
+        {
+          $set: { ...updateData, updatedAt: new Date() },
+          ...(Object.keys(unsetData).length ? { $unset: unsetData } : {}),
+        },
         { new: true, runValidators: true },
       );
 
