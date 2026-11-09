@@ -3,5 +3,11 @@ export default defineEventHandler(async (event) => {
     return;
   }
 
-  event.context.user = await resolveRequestUser(event);
+  try {
+    event.context.user = await resolveRequestUser(event);
+  } catch (error) {
+    // Fail closed without breaking routes that do not need a caller.
+    console.error("Failed to resolve request user:", error);
+    event.context.user = null;
+  }
 });
