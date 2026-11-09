@@ -18,6 +18,12 @@ declare module "h3" {
 export async function resolveAuthenticatedUser(
   event: H3Event,
 ): Promise<AuthenticatedUser | null> {
+  // The headers are only trustworthy when an auth proxy (App Service Easy
+  // Auth) strips client-supplied copies, so trust must be opted into.
+  if (!useRuntimeConfig(event).auth?.trustEasyAuth) {
+    return null;
+  }
+
   const principalId = getRequestHeader(event, "x-ms-client-principal-id");
 
   if (principalId) {
@@ -34,7 +40,7 @@ export async function resolveAuthenticatedUser(
     // so an unmatched principal id can never be resolved by name instead.
     return await User.findOne({
       email: principalName.toLowerCase(),
-      azureId: null,
+      azureId: { $in: [null, ""] },
     });
   }
 

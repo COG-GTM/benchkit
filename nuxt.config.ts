@@ -15,6 +15,14 @@ export default defineNuxtConfig({
     modelsDir: "models",
     devtools: true,
   },
+  runtimeConfig: {
+    auth: {
+      // NUXT_AUTH_TRUST_EASY_AUTH=true: trust x-ms-client-principal-* headers.
+      // Enable only behind Azure App Service authentication (or an equivalent
+      // proxy that strips these headers from client requests).
+      trustEasyAuth: false,
+    },
+  },
   css: ["~/assets/css/main.css"],
   app: {
     head: {
