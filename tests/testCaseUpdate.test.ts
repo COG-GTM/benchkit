@@ -88,8 +88,15 @@ describe("parseTestCaseUpdate", () => {
     );
   });
 
+  it("accepts array original", () => {
+    const update = parseTestCaseUpdate({ original: [{ a: 1 }, 2] });
+    assert.deepEqual(update.original, [{ a: 1 }, 2]);
+    rejects({ original: [{ $where: "1" }] }, /\$/);
+  });
+
   it("rejects non-object original", () => {
-    rejects({ original: [] }, /original must be a JSON object/);
-    rejects({ original: "x" }, /original must be a JSON object/);
+    rejects({ original: "x" }, /original must be a JSON object or array/);
+    rejects({ original: 1 }, /original must be a JSON object or array/);
+    rejects({ original: null }, /original must be a JSON object or array/);
   });
 });

@@ -24,7 +24,7 @@ export interface TestCaseAssignedUpdate {
 
 export interface TestCaseUpdate {
   inputs?: TestCaseInputUpdate[];
-  original?: Record<string, unknown>;
+  original?: Record<string, unknown> | unknown[];
   assigned?: TestCaseAssignedUpdate[];
 }
 
@@ -131,9 +131,9 @@ function assertSafeKeys(value: unknown, path: string, depth: number) {
   }
 }
 
-function parseOriginal(value: unknown): Record<string, unknown> {
-  if (!isPlainObject(value)) {
-    badRequest("original must be a JSON object");
+function parseOriginal(value: unknown): Record<string, unknown> | unknown[] {
+  if (!isPlainObject(value) && !Array.isArray(value)) {
+    badRequest("original must be a JSON object or array");
   }
   assertSafeKeys(value, "original", 0);
   return value;
