@@ -2,7 +2,16 @@ import { pathToFileURL } from "node:url";
 import mongoose from "mongoose";
 import { Project, TestCase, User } from "../models";
 
+function loadDotEnv() {
+  try {
+    process.loadEnvFile?.(".env");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+}
+
 async function seedDatabase() {
+  loadDotEnv();
   const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/benchkit";
   await mongoose.connect(uri);
   console.log("Connected to MongoDB");
