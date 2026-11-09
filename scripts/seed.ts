@@ -1,19 +1,27 @@
+import { pathToFileURL } from "node:url";
 import mongoose from "mongoose";
 import { Project, TestCase, User } from "../models";
 
-async function seedDatabase() {
+function loadDotEnv() {
   try {
-    // Connect to database
-    const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/benchkit";
-    await mongoose.connect(uri);
-    console.log("Connected to MongoDB");
+    process.loadEnvFile?.(".env");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+}
 
-    // Clear existing data (optional, for development)
+async function seedDatabase() {
+  loadDotEnv();
+  const uri = process.env.MONGODB_URI || "mongodb://localhost:27017/benchkit";
+  await mongoose.connect(uri);
+  console.log("Connected to MongoDB");
+
+  try {
+    // Clear existing data (development only)
     await User.deleteMany({});
     await Project.deleteMany({});
     await TestCase.deleteMany({});
 
-    // Create sample users
     const adminUser = await User.create({
       email: "admin@example.com",
       name: "Admin User",
@@ -28,58 +36,103 @@ async function seedDatabase() {
       azureId: "azure-reviewer-id",
     });
 
-    console.log("Created users:", {
-      admin: adminUser._id,
-      reviewer: reviewerUser._id,
+    const regularUser = await User.create({
+      email: "user@example.com",
+      name: "Regular User",
+      role: "user",
+      azureId: "azure-user-id",
     });
 
-    // Create sample project
-    const project = await Project.create({
-      name: "Sample Project",
-      description: "A sample project for testing",
+    const project1 = await Project.create({
+      name: "Insurance Documents",
+      description: "Processing insurance policy documents",
+      owner: adminUser._id,
+      members: [reviewerUser._id, regularUser._id],
+    });
+
+    const project2 = await Project.create({
+      name: "Medical Records",
+      description: "Medical document extraction and validation",
       owner: adminUser._id,
       members: [reviewerUser._id],
     });
 
-    console.log("Created project:", project._id);
+    let testCases = 0;
 
-    // Create sample test case
-    const testCase = await TestCase.create({
-      inputs: [
-        {
-          type: "pdf",
-          file: "uploads/sample-document.pdf",
-          filename: "sample-document.pdf",
+    for (let i = 1; i <= 10; i++) {
+      await TestCase.create({
+        inputs: [
+          {
+            type: "pdf",
+            file: `public/samples/document_${i}.pdf`,
+            filename: `insurance_policy_${i}.pdf`,
+          },
+          {
+            type: "img",
+            file: `public/samples/image_${i}.png`,
+            filename: `document_image_${i}.png`,
+          },
+        ],
+        original: {
+          policy_number: `POL-${1000 + i}`,
+          policy_holder: `John Doe ${i}`,
+          coverage_amount: 100000 + i * 5000,
+          effective_date: "2024-01-01",
+          expiry_date: "2025-01-01",
+          premium: 1200 + i * 50,
+          information_about_the_owner: {
+            policy_account_owner_1: {
+              name: `Policy Holder ${i}`,
+              address: `${100 + i} Main Street, City, State`,
+              phone: `555-0${100 + i}`,
+              email: `holder${i}@example.com`,
+            },
+          },
         },
-      ],
-      original: {
-        title: "Sample Document",
-        content: "This is expected content from the document",
-        metadata: {
-          pages: 5,
-          language: "en",
-        },
-      },
-      assigned: [
-        {
-          user: reviewerUser._id,
-          project: project._id,
-        },
-      ],
+        assigned: [
+          {
+            user: reviewerUser._id,
+            project: i <= 5 ? project1._id : project2._id,
+          },
+        ],
+        validated:
+          i <= 3
+            ? [
+                {
+                  timestamp: new Date(),
+                  user: reviewerUser._id,
+                  comment: `Validation completed for sample ${i}`,
+                  data: {
+                    policy_number: `POL-${1000 + i}`,
+                    policy_holder: `John Doe ${i} (Validated)`,
+                    coverage_amount: 100000 + i * 5000,
+                    validation_status: "approved",
+                  },
+                },
+              ]
+            : [],
+      });
+      testCases++;
+    }
+
+    console.log("Database seeded successfully:", {
+      users: 3,
+      projects: 2,
+      testCases,
     });
-
-    console.log("Created test case:", testCase._id);
-    console.log("Database seeded successfully!");
-  } catch (error) {
-    console.error("Error seeding database:", error);
   } finally {
     await mongoose.disconnect();
   }
 }
 
-// Run if called directly
-if (require.main === module) {
-  seedDatabase();
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  seedDatabase().catch((error) => {
+    console.error("Error seeding database:", error);
+    process.exitCode = 1;
+  });
 }
 
 export default seedDatabase;
