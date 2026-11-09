@@ -149,7 +149,7 @@
               <p class="mt-2">No input file available</p>
             </div>
             <!-- Image preview -->
-            <NuxtImg
+            <img
               v-else-if="getCurrentInputFile?.type === 'img'"
               :src="getCurrentInputFile.file"
               :alt="getCurrentInputFile.filename"
