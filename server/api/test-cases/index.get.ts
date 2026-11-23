@@ -19,7 +19,8 @@ export default defineEventHandler(async (event) => {
       .populate("assigned.user", "name email")
       .populate("assigned.project", "name")
       .populate("validated.user", "name email")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     return testCases;
   } catch (error) {
